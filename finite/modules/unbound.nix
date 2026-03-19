@@ -1,4 +1,14 @@
-{ settings, ... }:
+{ lib, settings, ... }:
+let
+  hasWifi = settings.WIFI_SSID or "" != "";
+  isEthPrimary = (settings.PRIMARY_INTERFACE or "eth0") == "eth0";
+  # When both eth0 and wlan0 are configured (eth primary + wifi), bind to both IPs
+  unboundInterfaces = [
+    "127.0.0.1"
+    settings.STATIC_IP
+  ]
+  ++ (lib.optionals (hasWifi && isEthPrimary) [ (settings.STATIC_IP_WLAN or "192.168.50.3") ]);
+in
 {
   systemd.services.unbound.restartIfChanged = true;
 
@@ -6,7 +16,7 @@
     enable = true;
     settings = {
       server = {
-        interface = [ "127.0.0.1" settings.STATIC_IP ];
+        interface = unboundInterfaces;
         port = settings.UNBOUND_PORT;
 
         access-control = settings.UNBOUND_SUBNETS;

@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD029 -->
 <p align="center">
   <img src="https://raw.githubusercontent.com/wh1le/finite/main/assets/logo2_trimmed.png?v=2" width="400" />
 </p>
@@ -62,7 +63,7 @@ _What_
 
 - [Raspberry Pi](https://www.raspberrypi.com/) (3B+ or newer)
 - 5V 3A power supply
-- Ethernet cable
+- Ethernet cable or WiFi (see [WiFi setup](#wifi-setup-optional))
 - SD card (8GB+)
 
 ## Setup
@@ -84,9 +85,24 @@ Adjust defaults in ./settings.nix:
 | `TIMEZONE`          | `"Europe/Lisbon"`                                                         | System timezone configuration.                                                              |
 | `ROUTER_IP`         | `"192.168.50.1"`                                                          | IP address of the network’s router/gateway for DNS and routing configuration.               |
 | `STATIC_IP`         | `"192.168.50.2"`                                                          | Fixed IP assigned to the Raspberry Pi host.                                                 |
+| `STATIC_IP_WLAN`    | `"192.168.50.3"`                                                          | WiFi IP when both Ethernet and WiFi are used (eth0 primary).                                |
+| `WIFI_SSID`         | `""`                                                                      | WiFi network name. Set to enable WiFi; leave empty for Ethernet only.                       |
+| `WIFI_SECRETS_FILE` | `"/var/lib/wifi.secret"`                                                 | Path to file containing `psk_wifi=your_password` (one line). Use /var/lib—/etc is a store symlink. |
+| `PRIMARY_INTERFACE` | `"eth0"`                                                                  | `"eth0"` or `"wlan0"` — which interface gets `STATIC_IP` and default gateway.                |
 | `TIMESYNCD_SERVERS` | `[ "162.159.200.1" "162.159.200.123" ]`                                   | NTP servers used for initial time synchronization to prevent Unbound TLS errors.            |
 | `UNBOUND_SUBNETS`   | `[ "127.0.0.1/32 allow" "192.168.1.0/24 allow" "192.168.50.0/24 allow" ]` | CIDR blocks with access control rules for Unbound (which clients can query the DNS server). |
 | `UNBOUND_PORT`      | `"5335"`                                                                  | Listening port for the Unbound DNS resolver.                                                |
+
+### WiFi setup (optional)
+
+To run Pi-hole over WiFi instead of Ethernet:
+
+1. Set `WIFI_SSID` to your network name in `settings.nix`.
+2. Set `PRIMARY_INTERFACE = "wlan0";`.
+3. Build and flash the image.
+4. Before first boot, add the WiFi secrets file to the SD card (see `Add WiFi secrets to SD card` below).
+
+For both Ethernet and WiFi (eth0 primary, wlan0 as backup), set `WIFI_SSID` and keep `PRIMARY_INTERFACE = "eth0"`. Create the secrets file on the Pi after first boot over Ethernet.
 
 ### Build Image
 
@@ -139,6 +155,32 @@ sync
 diskutil unmountDisk /dev/your_disk_name
 sudo dd if=./result/sd-image/your_image_name.img of=/dev/your_disk_name bs=4M status=progress conv=fsync
 ```
+
+3. **Add WiFi secrets to SD card (WiFi only)**
+
+If you use WiFi (`WIFI_SSID` set, `PRIMARY_INTERFACE = "wlan0"`), add the secrets file before first boot. Mount the SD card's root partition (usually the second partition, e.g. `mmcblk0p2` or `sdb2`) and create the file:
+
+```bash
+# linux
+mkdir -p /mnt/sd-root
+sudo mount /dev/your_disk_name2 /mnt/sd-root
+sudo mkdir -p /mnt/sd-root/var/lib
+echo 'psk_wifi=your_wifi_password' | sudo tee /mnt/sd-root/var/lib/wifi.secret
+sudo chmod 600 /mnt/sd-root/var/lib/wifi.secret
+sudo umount /mnt/sd-root
+```
+
+```bash
+# macOS
+diskutil mountDisk /dev/your_disk_name
+# Look for the volume name (e.g. "NIXOS_SD"). Replace YOUR_VOLUME with the mounted partition.
+sudo mkdir -p /Volumes/YOUR_VOLUME/var/lib
+echo 'psk_wifi=your_wifi_password' | sudo tee /Volumes/YOUR_VOLUME/var/lib/wifi.secret
+sudo chmod 600 /Volumes/YOUR_VOLUME/var/lib/wifi.secret
+diskutil unmount /dev/your_disk_name2
+```
+
+The file must live under `/var/lib` because `/etc` is a symlink into the read-only Nix store.
 
 ### Boot Pi and connect
 
@@ -212,7 +254,7 @@ Run this from any client:
 nslookup github.com 192.168.50.2
 ```
 
-If it answers, Pi-hole reigns supreme.  
+If it answers, Pi-hole reigns supreme.
 Then open the Pi-hole dashboard → _Query Log_ → watch the ads die in real time.
 
 ### 4. Deployment
