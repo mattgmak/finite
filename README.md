@@ -92,6 +92,9 @@ Adjust defaults in ./settings.nix:
 | `TIMESYNCD_SERVERS` | `[ "162.159.200.1" "162.159.200.123" ]`                                   | NTP servers used for initial time synchronization to prevent Unbound TLS errors.            |
 | `UNBOUND_SUBNETS`   | `[ "127.0.0.1/32 allow" "192.168.1.0/24 allow" "192.168.50.0/24 allow" ]` | CIDR blocks with access control rules for Unbound (which clients can query the DNS server). |
 | `UNBOUND_PORT`      | `"5335"`                                                                  | Listening port for the Unbound DNS resolver.                                                |
+| `HOSTNAME`          | `"finite"`                                                                | System hostname (used by Tailscale when enabled).                                          |
+| `TAILSCALE_ENABLE`  | `false`                                                                   | Enable Tailscale for ad-blocking over tailnet.                                              |
+| `TAILSCALE_HOSTNAME`| `"finite"`                                                                | Machine name on the tailnet (MagicDNS: `finite` or `finite.your-tailnet.ts.net`).          |
 
 ### WiFi setup (optional)
 
@@ -103,6 +106,17 @@ To run Pi-hole over WiFi instead of Ethernet:
 4. Before first boot, add the WiFi secrets file to the SD card (see `Add WiFi secrets to SD card` below).
 
 For both Ethernet and WiFi (eth0 primary, wlan0 as backup), set `WIFI_SSID` and keep `PRIMARY_INTERFACE = "eth0"`. Create the secrets file on the Pi after first boot over Ethernet.
+
+### Tailscale (optional)
+
+To use Pi-hole for ad-blocking over your [Tailscale](https://tailscale.com) tailnet (e.g. on phones or laptops away from home):
+
+1. Set `TAILSCALE_ENABLE = true;` in `settings.nix`.
+2. Rebuild and deploy.
+3. On the Pi, run `sudo tailscale login` and complete the auth flow.
+4. In the [Tailscale admin console](https://login.tailscale.com/admin/dns), add a **Custom nameserver** with your Pi's Tailscale IP. Enable "Override local DNS" for devices that should use Pi-hole.
+
+Devices on the tailnet will then use the Pi for DNS and get ad-blocking wherever they are.
 
 ### Build Image
 

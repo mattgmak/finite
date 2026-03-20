@@ -5,7 +5,7 @@ let
   isWlanPrimary = (settings.PRIMARY_INTERFACE or "eth0") == "wlan0";
 in
 {
-  networking.hostName = "finite";
+  networking.hostName = settings.HOSTNAME or "finite";
 
   # Point DNS resolution to Pi-hole
   networking.nameservers = [ "127.0.0.1" ];

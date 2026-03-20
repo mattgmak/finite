@@ -4,6 +4,8 @@
   STATE_VERSION = "25.05";
   SYSTEM = "aarch64-linux";
 
+  HOSTNAME = "finite";
+
   USERNAME = "goofy";
   USER_PASSWORD = "hackme";
 
@@ -53,4 +55,8 @@
   ];
 
   UNBOUND_PORT = "5335";
+
+  # Tailscale: enable for ad-blocking over tailnet. Run `tailscale login` on first boot.
+  TAILSCALE_ENABLE = true;
+  TAILSCALE_HOSTNAME = "finite";
 }

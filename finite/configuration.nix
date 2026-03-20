@@ -46,6 +46,7 @@
     ./modules/user.nix
     ./modules/virtualisation.nix
     ./modules/firewall.nix
+    ./modules/tailscale.nix
     ./modules/locales.nix
 
     ./modules/containers/pi-hole.nix
