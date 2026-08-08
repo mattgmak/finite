@@ -10,6 +10,10 @@ let
   ++ (lib.optionals (hasWifi && isEthPrimary) [ (settings.STATIC_IP_WLAN or "192.168.50.3") ]);
 in
 {
+  # Allow LAN clients that match UNBOUND_SUBNETS access-control rules
+  networking.firewall.allowedTCPPorts = [ (lib.toInt settings.UNBOUND_PORT) ];
+  networking.firewall.allowedUDPPorts = [ (lib.toInt settings.UNBOUND_PORT) ];
+
   systemd.services.unbound.restartIfChanged = true;
 
   services.unbound = {

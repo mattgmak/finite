@@ -1,4 +1,9 @@
-{ lib, pkgs, settings, ... }:
+{
+  lib,
+  pkgs,
+  settings,
+  ...
+}:
 
 let
   # DNS is unavailable on first boot. Pi-hole tries to resolve during startup and fails.
@@ -37,8 +42,14 @@ in
   services.resolved.enable = false;
   services.dnsmasq.enable = lib.mkForce false;
 
-  networking.firewall.allowedTCPPorts = [ 53 80 ];
-  networking.firewall.allowedUDPPorts = [ 53 67 ];
+  networking.firewall.allowedTCPPorts = [
+    53
+    80
+  ];
+  networking.firewall.allowedUDPPorts = [
+    53
+    67
+  ];
 
   systemd.services.docker-pi-hole.after = [ "unbound.service" ];
   systemd.services.docker-pi-hole.requires = [ "unbound.service" ];
@@ -80,7 +91,8 @@ in
     environment = {
       TZ = settings.TIMEZONE;
       DNSMASQ_USER = "root";
-      FTLCONF_dns_upstreams = "${settings.STATIC_IP}#${settings.UNBOUND_PORT}";
+      # Loopback avoids NixOS firewall blocking hairpin TCP to STATIC_IP:5335
+      FTLCONF_dns_upstreams = "127.0.0.1#${settings.UNBOUND_PORT}";
 
       FTLCONF_dns_queryLogging = "false";
       FTLCONF_dns_rateLimit_count = "10000";

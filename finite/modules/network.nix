@@ -1,4 +1,4 @@
-{lib, settings, ...}:
+{ lib, settings, pkgs, ... }:
 
 let
   hasWifi = settings.WIFI_SSID or "" != "";
@@ -47,5 +47,27 @@ in
         prefixLength = 24;
       }
     ];
+  };
+
+  # WiFi power save causes wlan0 to sleep and drop DNS/SSH connections.
+  systemd.services.wifi-powersave-off = lib.mkIf hasWifi {
+    description = "Disable WiFi power saving on wlan0";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      for i in $(seq 1 30); do
+        if ${pkgs.iw}/bin/iw dev wlan0 get power_save >/dev/null 2>&1; then
+          ${pkgs.iw}/bin/iw dev wlan0 set power_save off
+          exit 0
+        fi
+        sleep 1
+      done
+      echo "wlan0 not ready, could not disable power save" >&2
+      exit 1
+    '';
   };
 }
